@@ -1,0 +1,477 @@
+[
+      {
+        "make": "Toyota",
+        "model": "Corolla",
+        "year": "2023/2024",
+        "variant": "Sedan",
+        "boot_dimensions": {
+          "length": 1041,
+          "width": 1245,
+          "height": 533,
+          "volume_liters": 370
+        },
+        "opening_dimensions": {
+          "width": null,
+          "height": null
+        },
+        "irregularities": [
+          "Rear seatbacks don't fold completely flat",
+          "Limited wheel well intrusion",
+          "Spare tire under cargo floor"
+        ],
+        "cabin_overflow": {
+          "rear_floor_space": "minimal",
+          "center_console": "standard",
+          "front_passenger_floor": "limited"
+        },
+        "measurement_source": "manufacturer_specs_and_forums",
+        "notes": "Estimated from volume and partial measurements"
+      },
+      {
+        "make": "Toyota",
+        "model": "Corolla",
+        "year": "2023/2024",
+        "variant": "Hatchback",
+        "boot_dimensions": {
+          "length": 1549,
+          "width": 940,
+          "height": 597,
+          "volume_liters": 504
+        },
+        "opening_dimensions": {
+          "width": 940,
+          "height": 597
+        },
+        "irregularities": [
+          "High cargo floor due to design",
+          "Sloped rear affecting vertical space",
+          "Spare tire under floor"
+        ],
+        "cabin_overflow": {
+          "rear_floor_space": "minimal",
+          "center_console": "standard",
+          "front_passenger_floor": "limited"
+        },
+        "measurement_source": "user_measurements",
+        "notes": "With front seats moved forward"
+      },
+      {
+        "make": "Honda",
+        "model": "Civic",
+        "year": "2023/2024",
+        "variant": "Sedan",
+        "boot_dimensions": {
+          "length": 1054,
+          "width": 1016,
+          "height": 559,
+          "volume_liters": 419
+        },
+        "opening_dimensions": {
+          "width": null,
+          "height": null
+        },
+        "irregularities": [
+          "Wheel well intrusions reduce width",
+          "Sloped trunk floor",
+          "Pass-through opening 889mm wide"
+        ],
+        "cabin_overflow": {
+          "pass_through_width": 889,
+          "pass_through_height": 368,
+          "total_length_to_front": 1890
+        },
+        "measurement_source": "user_measurements",
+        "notes": "2018 forum measurements stated applicable to 2023/2024"
+      },
+      {
+        "make": "Honda",
+        "model": "Civic",
+        "year": "2023/2024",
+        "variant": "Hatchback",
+        "boot_dimensions": {
+          "length": null,
+          "width": null,
+          "height": null,
+          "volume_liters": 728
+        },
+        "opening_dimensions": {
+          "width": null,
+          "height": null
+        },
+        "irregularities": [
+          "60/40 split rear seats",
+          "Greater height than sedan"
+        ],
+        "cabin_overflow": {
+          "rear_floor_space": "standard",
+          "center_console": "standard",
+          "front_passenger_floor": "standard"
+        },
+        "measurement_source": "manufacturer_specs",
+        "notes": "24.5-25.7 cubic feet depending on trim"
+      },
+      {
+        "make": "Toyota",
+        "model": "RAV4",
+        "year": "2023/2024",
+        "boot_dimensions": {
+          "length": 1829,
+          "width": 1499,
+          "height": 929,
+          "volume_liters": 1065
+        },
+        "opening_dimensions": {
+          "width": 1143,
+          "height": 929
+        },
+        "irregularities": [
+          "Minimal wheel well intrusions",
+          "Height-adjustable cargo deck (51mm adjustment)",
+          "Under-floor storage compartments",
+          "60/40 split folding seats"
+        ],
+        "cabin_overflow": {
+          "rear_floor_space": 960,
+          "center_console": "significant storage",
+          "front_passenger_floor": "standard"
+        },
+        "measurement_source": "manufacturer_specs_and_forums",
+        "notes": "Average of 1778-1880mm length range"
+      },
+      {
+        "make": "Honda",
+        "model": "CR-V",
+        "year": "2023/2024",
+        "boot_dimensions": {
+          "length": 953,
+          "width": 1003,
+          "height": 470,
+          "volume_liters": 1113
+        },
+        "opening_dimensions": {
+          "width": null,
+          "height": null
+        },
+        "irregularities": [
+          "Wheel well intrusions limit width",
+          "Cargo cover bar reduces height",
+          "Sloped floor towards rear seats",
+          "Under-floor storage compartment"
+        ],
+        "cabin_overflow": {
+          "total_length_to_front": 1803,
+          "rear_seats": "60/40 split fold flat",
+          "front_passenger_floor": "standard"
+        },
+        "measurement_source": "user_measurements",
+        "notes": "From Honda CR-V Owners Club forum"
+      },
+      {
+        "make": "Ford",
+        "model": "Explorer",
+        "year": "2023/2024",
+        "boot_dimensions": {
+          "length": 528,
+          "width": 1041,
+          "height": 833,
+          "volume_liters": 515
+        },
+        "opening_dimensions": {
+          "width": 1175,
+          "height": 1016
+        },
+        "irregularities": [
+          "Significant wheel well intrusions",
+          "Under-floor storage with removable spare",
+          "Flat floor when seats folded",
+          "Moderate liftover height"
+        ],
+        "cabin_overflow": {
+          "between_captain_chairs": "available",
+          "front_passenger_floor": "standard",
+          "max_length_to_front": 2131
+        },
+        "measurement_source": "user_measurements",
+        "notes": "Behind third row measurements"
+      },
+      {
+        "make": "Chevrolet",
+        "model": "Tahoe",
+        "year": "2023/2024",
+        "boot_dimensions": {
+          "length": 685,
+          "width": 1295,
+          "height": 885,
+          "volume_liters": 722
+        },
+        "opening_dimensions": {
+          "width": null,
+          "height": null
+        },
+        "irregularities": [
+          "Independent rear suspension for flat folding",
+          "Low load floor",
+          "Under-floor storage",
+          "Spare tire under floor"
+        ],
+        "cabin_overflow": {
+          "front_legroom": 1130,
+          "second_row_legroom": 1067,
+          "third_row_legroom": 886
+        },
+        "measurement_source": "estimated_from_volume",
+        "notes": "Linear dimensions estimated from cubic feet data"
+      },
+      {
+        "make": "Toyota",
+        "model": "Sienna",
+        "year": "2023/2024",
+        "boot_dimensions": {
+          "length": 584,
+          "width": 1219,
+          "height": 914,
+          "volume_liters": 948
+        },
+        "opening_dimensions": {
+          "width": null,
+          "height": null
+        },
+        "irregularities": [
+          "Third-row seats fold into floor (Split & Stow)",
+          "No removable second-row seats",
+          "Flat load floor when configured",
+          "No spare tire in cargo area"
+        ],
+        "cabin_overflow": {
+          "second_row_slide_range": 635,
+          "center_console": "extends to second row",
+          "cup_holders": 18,
+          "max_cargo_length": null
+        },
+        "measurement_source": "manufacturer_specs_and_forums",
+        "notes": "Behind third row measurements"
+      },
+      {
+        "make": "Honda",
+        "model": "Odyssey",
+        "year": "2023/2024",
+        "boot_dimensions": {
+          "length": 635,
+          "width": 1245,
+          "height": 1194,
+          "volume_liters": 928
+        },
+        "opening_dimensions": {
+          "width": 1270,
+          "height": 1270
+        },
+        "irregularities": [
+          "Cargo well creates step-down (254mm deep)",
+          "Third row folds into floor wells",
+          "Magic Slide second row removable",
+          "Multiple floor height levels (4 different)"
+        ],
+        "cabin_overflow": {
+          "total_cabin_length": 2438,
+          "sliding_door_gap": 1651,
+          "cargo_well_length": 584,
+          "cargo_well_width": 1270
+        },
+        "measurement_source": "user_measurements",
+        "notes": "Behind third row; average of 1168-1219mm height"
+      },
+      {
+        "make": "Nissan",
+        "model": "Versa",
+        "year": "2023/2024",
+        "boot_dimensions": {
+          "length": 610,
+          "width": 991,
+          "height": 444,
+          "volume_liters": 425
+        },
+        "opening_dimensions": {
+          "width": null,
+          "height": null
+        },
+        "irregularities": [
+          "Spare tire and jack present (removable)",
+          "Low, wide trunk opening",
+          "60/40 split seats on SV/SR trims"
+        ],
+        "cabin_overflow": {
+          "front_legroom": 1130,
+          "rear_legroom": 787,
+          "center_console": "with storage"
+        },
+        "measurement_source": "user_measurements",
+        "notes": "With cargo cover installed"
+      },
+      {
+        "make": "Hyundai",
+        "model": "Accent",
+        "year": "2023/2024",
+        "boot_dimensions": {
+          "length": null,
+          "width": null,
+          "height": null,
+          "volume_liters": null
+        },
+        "opening_dimensions": {
+          "width": null,
+          "height": null
+        },
+        "irregularities": [],
+        "cabin_overflow": {},
+        "measurement_source": "not_applicable",
+        "notes": "MODEL DISCONTINUED - No 2023/2024 Accent exists"
+      },
+      {
+        "make": "Hyundai",
+        "model": "Kona",
+        "year": "2024",
+        "variant": "Regular/Electric",
+        "boot_dimensions": {
+          "length": null,
+          "width": null,
+          "height": null,
+          "volume_liters": 722
+        },
+        "opening_dimensions": {
+          "width": null,
+          "height": null
+        },
+        "irregularities": [
+          "Hands-free power liftgate available",
+          "Vertical cargo cover storage",
+          "Adjustable cargo floor",
+          "Regular has spare tire, Electric does not"
+        ],
+        "cabin_overflow": {
+          "rear_legroom_increase": 77,
+          "front_headroom_increase": 76,
+          "under_seat_trays": "available"
+        },
+        "measurement_source": "manufacturer_specs",
+        "notes": "Redesigned 2024; same cargo space for regular and electric"
+      },
+      {
+        "make": "Polestar",
+        "model": "2",
+        "year": "2023/2024",
+        "boot_dimensions": {
+          "length": 1050,
+          "width": 1000,
+          "height": 620,
+          "volume_liters": 405
+        },
+        "opening_dimensions": {
+          "width": 1200,
+          "height": 410
+        },
+        "irregularities": [
+          "Hatchback sloping rear reduces height",
+          "Wheel well intrusions in forward section",
+          "Removable parcel shelf",
+          "Pop-up partition available",
+          "Ski hatch in rear seat"
+        ],
+        "cabin_overflow": {
+          "frunk_capacity": 41,
+          "under_floor": "surprisingly large compartment",
+          "seats_folded_length": 1800,
+          "rear_seats": "60/40 split"
+        },
+        "measurement_source": "user_measurements",
+        "notes": "Average of 1000-1100mm length; height without parcel shelf"
+      },
+      {
+        "make": "Tesla",
+        "model": "Model 3",
+        "year": "2024",
+        "variant": "Highland",
+        "boot_dimensions": {
+          "length": 1070,
+          "width": 940,
+          "height": 460,
+          "volume_liters": 594
+        },
+        "opening_dimensions": {
+          "width": 940,
+          "height": 460
+        },
+        "irregularities": [
+          "Sedan trunk with narrow opening",
+          "No significant wheel well intrusions",
+          "Flat load floor",
+          "Sub-trunk storage available"
+        ],
+        "cabin_overflow": {
+          "frunk_dimensions": "230x720x350mm",
+          "sub_trunk": "290x630x320mm",
+          "seats_folded_length": 1870,
+          "rear_seats": "60/40 split with pass-through"
+        },
+        "measurement_source": "user_measurements",
+        "notes": "Owner measurements from social media"
+      },
+      {
+        "make": "Tesla",
+        "model": "Model Y",
+        "year": "2023/2024",
+        "boot_dimensions": {
+          "length": 1080,
+          "width": 940,
+          "height": 700,
+          "volume_liters": 1926
+        },
+        "opening_dimensions": {
+          "width": 1200,
+          "height": 690
+        },
+        "irregularities": [
+          "SUV with higher load floor",
+          "Minimal wheel well intrusion",
+          "Sloping rear reduces height",
+          "Low liftover height"
+        ],
+        "cabin_overflow": {
+          "frunk_capacity": 117,
+          "frunk_dimensions": "350x700x430mm",
+          "under_trunk": "350x600x800mm",
+          "seats_folded_length": 1980,
+          "rear_seats": "40/20/40 split fold flat"
+        },
+        "measurement_source": "user_measurements",
+        "notes": "Comprehensive owner measurements"
+      },
+      {
+        "make": "BYD",
+        "model": "Atto 3",
+        "year": "2023/2024",
+        "boot_dimensions": {
+          "length": 850,
+          "width": 1050,
+          "height": 550,
+          "volume_liters": 440
+        },
+        "opening_dimensions": {
+          "width": null,
+          "height": null
+        },
+        "irregularities": [
+          "Adjustable boot board positioning",
+          "Under-floor storage compartment",
+          "60/40 seats don't fold completely flat",
+          "No spare tire (repair kit only)"
+        ],
+        "cabin_overflow": {
+          "frunk_capacity": 0,
+          "under_floor_storage": "available",
+          "rear_seats": "60/40 split",
+          "flat_floor": "EV platform advantage"
+        },
+        "measurement_source": "estimated_from_volume",
+        "notes": "Dimensions estimated from 440L capacity"
+      }
+    ]

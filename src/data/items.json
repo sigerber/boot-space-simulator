@@ -1,0 +1,242 @@
+[
+  {
+    "name": "Large Suitcase",
+    "dimensions": {
+      "length": 750,
+      "width": 500,
+      "height": 300
+    },
+    "weight": 15,
+    "rigidity": "rigid",
+    "category": "luggage",
+    "cabinSuitable": true,
+    "compressibility": 10,
+    "stackable": true,
+    "orientationConstraints": "any",
+    "customItem": false
+  },
+  {
+    "name": "Medium Suitcase",
+    "dimensions": {
+      "length": 650,
+      "width": 450,
+      "height": 250
+    },
+    "weight": 12,
+    "rigidity": "rigid",
+    "category": "luggage",
+    "cabinSuitable": true,
+    "compressibility": 10,
+    "stackable": true,
+    "orientationConstraints": "any",
+    "customItem": false
+  },
+  {
+    "name": "Small Suitcase",
+    "dimensions": {
+      "length": 550,
+      "width": 400,
+      "height": 200
+    },
+    "weight": 8,
+    "rigidity": "rigid",
+    "category": "luggage",
+    "cabinSuitable": true,
+    "compressibility": 10,
+    "stackable": true,
+    "orientationConstraints": "any",
+    "customItem": false
+  },
+  {
+    "name": "Carry-on Bag",
+    "dimensions": {
+      "length": 550,
+      "width": 350,
+      "height": 230
+    },
+    "weight": 8,
+    "rigidity": "semi_rigid",
+    "category": "luggage",
+    "cabinSuitable": true,
+    "compressibility": 15,
+    "stackable": true,
+    "orientationConstraints": "any",
+    "customItem": false
+  },
+  {
+    "name": "Duffel Bag",
+    "dimensions": {
+      "length": 600,
+      "width": 300,
+      "height": 300
+    },
+    "weight": 5,
+    "rigidity": "flexible",
+    "category": "luggage",
+    "cabinSuitable": true,
+    "compressibility": 25,
+    "stackable": false,
+    "orientationConstraints": "any",
+    "customItem": false
+  },
+  {
+    "name": "Backpack",
+    "dimensions": {
+      "length": 450,
+      "width": 300,
+      "height": 200
+    },
+    "weight": 3,
+    "rigidity": "flexible",
+    "category": "luggage",
+    "cabinSuitable": true,
+    "compressibility": 30,
+    "stackable": false,
+    "orientationConstraints": "any",
+    "customItem": false
+  },
+  {
+    "name": "Standard Stroller",
+    "dimensions": {
+      "length": 1050,
+      "width": 600,
+      "height": 300
+    },
+    "weight": 12,
+    "rigidity": "rigid",
+    "category": "baby_gear",
+    "cabinSuitable": false,
+    "compressibility": 0,
+    "stackable": false,
+    "orientationConstraints": "flat_only",
+    "customItem": false
+  },
+  {
+    "name": "Compact Stroller",
+    "dimensions": {
+      "length": 850,
+      "width": 450,
+      "height": 250
+    },
+    "weight": 8,
+    "rigidity": "rigid",
+    "category": "baby_gear",
+    "cabinSuitable": false,
+    "compressibility": 0,
+    "stackable": false,
+    "orientationConstraints": "flat_only",
+    "customItem": false
+  },
+  {
+    "name": "Pack-n-play",
+    "dimensions": {
+      "length": 800,
+      "width": 800,
+      "height": 150
+    },
+    "weight": 10,
+    "rigidity": "semi_rigid",
+    "category": "baby_gear",
+    "cabinSuitable": false,
+    "compressibility": 5,
+    "stackable": true,
+    "orientationConstraints": "flat_only",
+    "customItem": false
+  },
+  {
+    "name": "Golf Bag",
+    "dimensions": {
+      "length": 1200,
+      "width": 350,
+      "height": 250
+    },
+    "weight": 7,
+    "rigidity": "semi_rigid",
+    "category": "sports",
+    "cabinSuitable": false,
+    "compressibility": 0,
+    "stackable": false,
+    "orientationConstraints": "any",
+    "customItem": false
+  },
+  {
+    "name": "Large Cooler",
+    "dimensions": {
+      "length": 600,
+      "width": 400,
+      "height": 400
+    },
+    "weight": 8,
+    "rigidity": "rigid",
+    "category": "equipment",
+    "cabinSuitable": false,
+    "compressibility": 0,
+    "stackable": true,
+    "orientationConstraints": "upright_only",
+    "customItem": false
+  },
+  {
+    "name": "Small Cooler",
+    "dimensions": {
+      "length": 400,
+      "width": 300,
+      "height": 300
+    },
+    "weight": 4,
+    "rigidity": "rigid",
+    "category": "equipment",
+    "cabinSuitable": true,
+    "compressibility": 0,
+    "stackable": true,
+    "orientationConstraints": "upright_only",
+    "customItem": false
+  },
+  {
+    "name": "Shopping Bags",
+    "dimensions": {
+      "length": 400,
+      "width": 300,
+      "height": 150
+    },
+    "weight": 2,
+    "rigidity": "very_flexible",
+    "category": "shopping",
+    "cabinSuitable": true,
+    "compressibility": 30,
+    "stackable": false,
+    "orientationConstraints": "any",
+    "customItem": false
+  },
+  {
+    "name": "Car Seat",
+    "dimensions": {
+      "length": 450,
+      "width": 450,
+      "height": 650
+    },
+    "weight": 15,
+    "rigidity": "rigid",
+    "category": "baby_gear",
+    "cabinSuitable": false,
+    "compressibility": 0,
+    "stackable": false,
+    "orientationConstraints": "upright_only",
+    "customItem": false
+  },
+  {
+    "name": "Sports Equipment Bag",
+    "dimensions": {
+      "length": 900,
+      "width": 300,
+      "height": 300
+    },
+    "weight": 6,
+    "rigidity": "semi_rigid",
+    "category": "sports",
+    "cabinSuitable": true,
+    "compressibility": 15,
+    "stackable": false,
+    "orientationConstraints": "any",
+    "customItem": false
+  }
+] 
