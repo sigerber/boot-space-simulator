@@ -3,6 +3,7 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Text, Box } from '@react-three/drei';
 import { Vehicle } from '../../types/vehicle.types';
 import { PackingResult, PackedItem } from '../../utils/packingAlgorithm';
+import { IrregularitySeverity } from '../../types/enums';
 import * as THREE from 'three';
 
 interface BootVisualizationProps {
@@ -24,21 +25,55 @@ const COLORS = {
   unpackedRed: '#ef4444',    // doesn't fit
   cabinBlue: '#3b82f6',      // cabin suggestion
   highlight: '#ffffff',
-  bootOpening: '#8b5cf6',    // boot opening constraint
-  openingBlocked: '#f59e0b'  // when opening is restrictive
+  bootOpening: '#06b6d4',    // boot opening constraint (cyan)
+  openingBlocked: '#f59e0b', // when opening is restrictive
+  irregularities: '#8b5cf6'  // space reserved for irregularities (purple)
 };
 
 function BootOutline({ vehicle }: { vehicle: Vehicle }) {
   const { length, width, height } = vehicle.bootMeasurements;
+  const { bootIrregularities } = vehicle;
+  
+  // Calculate efficiency factor based on irregularities (same logic as packing algorithm)
+  let efficiencyFactor = 0.85; // Base efficiency for regular boot
+  
+  for (const irregularity of bootIrregularities) {
+    switch (irregularity.severity) {
+      case IrregularitySeverity.MINOR:
+        efficiencyFactor = Math.min(efficiencyFactor, 0.80);
+        break;
+      case IrregularitySeverity.MODERATE:
+        efficiencyFactor = Math.min(efficiencyFactor, 0.75);
+        break;
+      case IrregularitySeverity.SIGNIFICANT:
+        efficiencyFactor = Math.min(efficiencyFactor, 0.70);
+        break;
+    }
+  }
+
+  // Calculate dimension reductions based on irregularities
+  // Irregularities predominantly impact width and slightly reduce length
+  const volumeReduction = 1 - efficiencyFactor;
+  const widthReduction = volumeReduction * 0.7; // 70% of volume reduction affects width
+  const lengthReduction = volumeReduction * 0.3; // 30% affects length
+  
+  // Calculate reduced dimensions
+  const usableWidth = width * (1 - widthReduction);
+  const usableLength = length * (1 - lengthReduction);
+  const usableHeight = height; // Height not affected by irregularities
   
   // Scale dimensions for display
   const scaledLength = length * SCALE_FACTOR;
   const scaledWidth = width * SCALE_FACTOR;
   const scaledHeight = height * SCALE_FACTOR;
   
+  const scaledUsableLength = usableLength * SCALE_FACTOR;
+  const scaledUsableWidth = usableWidth * SCALE_FACTOR;
+  const scaledUsableHeight = usableHeight * SCALE_FACTOR;
+  
   return (
     <group>
-      {/* Boot outline wireframe */}
+      {/* Full boot outline wireframe */}
       <Box 
         args={[scaledLength, scaledHeight, scaledWidth]}
         position={[0, scaledHeight/2, 0]}
@@ -51,7 +86,68 @@ function BootOutline({ vehicle }: { vehicle: Vehicle }) {
         />
       </Box>
       
-      {/* Grid lines every 100mm */}
+      {/* Usable space (after irregularities) */}
+      <Box 
+        args={[scaledUsableLength, scaledUsableHeight, scaledUsableWidth]}
+        position={[0, scaledUsableHeight/2, 0]}
+      >
+        <meshBasicMaterial 
+          color={COLORS.packedGreen} 
+          wireframe 
+          transparent 
+          opacity={0.3} 
+        />
+      </Box>
+      
+      {/* Reserved space indicators - only show if there are irregularities */}
+      {bootIrregularities.length > 0 && (
+        <group>
+          {/* Width reduction zones (sides) */}
+          {widthReduction > 0 && (
+            <>
+              {/* Left side reserved space */}
+              <Box 
+                args={[scaledLength, scaledHeight, (scaledWidth - scaledUsableWidth) / 2]}
+                position={[0, scaledHeight/2, -(scaledUsableWidth/2 + (scaledWidth - scaledUsableWidth)/4)]}
+              >
+                <meshBasicMaterial 
+                  color={COLORS.irregularities} 
+                  transparent 
+                  opacity={0.15} 
+                />
+              </Box>
+              
+              {/* Right side reserved space */}
+              <Box 
+                args={[scaledLength, scaledHeight, (scaledWidth - scaledUsableWidth) / 2]}
+                position={[0, scaledHeight/2, (scaledUsableWidth/2 + (scaledWidth - scaledUsableWidth)/4)]}
+              >
+                <meshBasicMaterial 
+                  color={COLORS.irregularities} 
+                  transparent 
+                  opacity={0.15} 
+                />
+              </Box>
+            </>
+          )}
+          
+          {/* Length reduction zone (rear) */}
+          {lengthReduction > 0 && (
+            <Box 
+              args={[(scaledLength - scaledUsableLength), scaledHeight, scaledUsableWidth]}
+              position={[(scaledLength/2 - (scaledLength - scaledUsableLength)/2), scaledHeight/2, 0]}
+            >
+              <meshBasicMaterial 
+                color={COLORS.irregularities} 
+                transparent 
+                opacity={0.15} 
+              />
+            </Box>
+          )}
+        </group>
+      )}
+      
+      {/* Grid lines for full boot space */}
       <GridLines 
         length={scaledLength} 
         width={scaledWidth} 
@@ -66,6 +162,13 @@ function BootOutline({ vehicle }: { vehicle: Vehicle }) {
         scaledLength={scaledLength}
         scaledWidth={scaledWidth}
         scaledHeight={scaledHeight}
+        usableLength={usableLength}
+        usableWidth={usableWidth}
+        usableHeight={usableHeight}
+        scaledUsableLength={scaledUsableLength}
+        scaledUsableWidth={scaledUsableWidth}
+        scaledUsableHeight={scaledUsableHeight}
+        hasIrregularities={bootIrregularities.length > 0}
       />
     </group>
   );
@@ -73,7 +176,7 @@ function BootOutline({ vehicle }: { vehicle: Vehicle }) {
 
 function BootOpening({ vehicle }: { vehicle: Vehicle }) {
   const { bootMeasurements } = vehicle;
-  const { openingWidth, openingHeight, width, height } = bootMeasurements;
+  const { openingWidth, openingHeight, width, height, length } = bootMeasurements;
   
   // Always show opening visualization - use actual opening dimensions or fall back to boot dimensions
   const effectiveOpeningWidth = openingWidth || width;
@@ -81,15 +184,16 @@ function BootOpening({ vehicle }: { vehicle: Vehicle }) {
   const hasSpecificOpeningData = !!(openingWidth || openingHeight);
   
   // Scale dimensions for display
+  const scaledLength = length * SCALE_FACTOR;
   const scaledOpeningWidth = effectiveOpeningWidth * SCALE_FACTOR;
   const scaledOpeningHeight = effectiveOpeningHeight * SCALE_FACTOR;
   const scaledBootWidth = width * SCALE_FACTOR;
   
   // Position the opening at the front of the boot (positive Z) where items are loaded from
   const openingPosition = {
-    x: 0,
+    x: -scaledLength / 2 - 0.01, // At the front face of the boot (negative side)
     y: scaledOpeningHeight / 2,
-    z: scaledBootWidth / 2 + 0.01 // Slightly in front of the boot outline
+    z: 0 // Centered width-wise
   };
   
   // Determine if opening is restrictive compared to boot space
@@ -105,7 +209,7 @@ function BootOpening({ vehicle }: { vehicle: Vehicle }) {
     <group>
       {/* Opening frame outline */}
       <Box 
-        args={[scaledOpeningWidth, scaledOpeningHeight, 0.005]}
+        args={[0.005, scaledOpeningHeight, scaledOpeningWidth]}
         position={[openingPosition.x, openingPosition.y, openingPosition.z]}
       >
         <meshBasicMaterial 
@@ -118,8 +222,8 @@ function BootOpening({ vehicle }: { vehicle: Vehicle }) {
       
       {/* Semi-transparent opening plane */}
       <Box 
-        args={[scaledOpeningWidth, scaledOpeningHeight, 0.001]}
-        position={[openingPosition.x, openingPosition.y, openingPosition.z - 0.002]}
+        args={[0.001, scaledOpeningHeight, scaledOpeningWidth]}
+        position={[openingPosition.x + 0.002, openingPosition.y, openingPosition.z]}
       >
         <meshBasicMaterial 
           color={openingColor} 
@@ -193,10 +297,16 @@ function GridLines({ length, width }: { length: number; width: number; height: n
 
 function DimensionLabels({ 
   length, width, height, 
-  scaledLength, scaledWidth, scaledHeight 
+  scaledLength, scaledWidth, scaledHeight,
+  usableLength, usableWidth, usableHeight,
+  scaledUsableLength, scaledUsableWidth, scaledUsableHeight,
+  hasIrregularities
 }: { 
   length: number; width: number; height: number;
   scaledLength: number; scaledWidth: number; scaledHeight: number;
+  usableLength: number; usableWidth: number; usableHeight: number;
+  scaledUsableLength: number; scaledUsableWidth: number; scaledUsableHeight: number;
+  hasIrregularities: boolean;
 }) {
   return (
     <group>
@@ -233,6 +343,46 @@ function DimensionLabels({
       >
         {height}mm
       </Text>
+      
+      {/* Usable Length label */}
+      {hasIrregularities && (
+        <Text
+          position={[0, -0.1, scaledUsableWidth/2 + 0.1]}
+          fontSize={0.05}
+          color="#333333"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {usableLength}mm
+        </Text>
+      )}
+      
+      {/* Usable Width label */}
+      {hasIrregularities && (
+        <Text
+          position={[scaledUsableLength/2 + 0.1, -0.1, 0]}
+          fontSize={0.05}
+          color="#333333"
+          anchorX="center"
+          anchorY="middle"
+          rotation={[0, Math.PI/2, 0]}
+        >
+          {usableWidth}mm
+        </Text>
+      )}
+      
+      {/* Usable Height label */}
+      {hasIrregularities && (
+        <Text
+          position={[scaledUsableLength/2 + 0.1, scaledUsableHeight/2, scaledUsableWidth/2 + 0.1]}
+          fontSize={0.05}
+          color="#333333"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {usableHeight}mm
+        </Text>
+      )}
     </group>
   );
 }
@@ -349,7 +499,7 @@ export function BootVisualization({ vehicle, packingResult, highlightedItem }: B
     <div className="w-full h-96 bg-gray-50 rounded-lg overflow-hidden">
       <Canvas
         camera={{ 
-          position: [2, 1.5, 2], 
+          position: [-3, 1, 0], 
           fov: 50,
           near: 0.01,
           far: 100
@@ -391,9 +541,7 @@ export function BootVisualization({ vehicle, packingResult, highlightedItem }: B
         })}
         
         {/* Utilization display */}
-        {packingResult && (
-          <UtilizationDisplay utilization={packingResult.volumeUtilization} />
-        )}
+        {/* Removed utilization display */}
         
         {/* Camera controls */}
         <OrbitControls 
@@ -407,7 +555,8 @@ export function BootVisualization({ vehicle, packingResult, highlightedItem }: B
       </Canvas>
       
       {/* View controls overlay */}
-      <div className="absolute bottom-4 left-4 bg-white bg-opacity-90 rounded px-3 py-2 text-xs text-gray-600">
+      <div className="absolute top-60 right-4 bg-white bg-opacity-90 rounded p-3 text-xs text-gray-600" style={{ width: '200px' }}>
+        <div className="font-medium mb-2">View Controls</div>
         <div>🖱️ Drag to rotate</div>
         <div>🔍 Scroll to zoom</div>
         <div>✋ Right-click + drag to pan</div>
@@ -428,6 +577,18 @@ export function BootVisualization({ vehicle, packingResult, highlightedItem }: B
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.packedOrange }}></div>
             <span>Compressed</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded border border-gray-400" style={{ backgroundColor: COLORS.bootOutline, opacity: 0.5 }}></div>
+            <span>Full boot outline</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded border border-green-500" style={{ backgroundColor: COLORS.packedGreen, opacity: 0.3 }}></div>
+            <span>Usable space</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.irregularities }}></div>
+            <span>Reserved for irregularities</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.bootOpening }}></div>

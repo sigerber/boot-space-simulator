@@ -260,13 +260,13 @@ function findBestPosition(
   bootSpace: BootSpace,
   packedItems: PackedItem[]
 ): { x: number; y: number; z: number } | null {
-  // Try to place items starting from bottom-left-back corner
-  // and work systematically through the space
+  // Try to place items starting from bottom-back-left corner (back of boot)
+  // and work systematically toward the front (opening)
   const stepSize = 50; // mm increments for position searching
   
   for (let z = 0; z <= bootSpace.height - orientation.height; z += stepSize) {
     for (let y = 0; y <= bootSpace.width - orientation.width; y += stepSize) {
-      for (let x = 0; x <= bootSpace.length - orientation.length; x += stepSize) {
+      for (let x = bootSpace.length - orientation.length; x >= 0; x -= stepSize) {
         const position = { x, y, z };
         
         if (fitsInSpace(orientation, bootSpace, position) && 
