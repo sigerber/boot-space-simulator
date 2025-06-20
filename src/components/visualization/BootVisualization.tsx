@@ -23,7 +23,9 @@ const COLORS = {
   packedOrange: '#f97316',   // requires compression
   unpackedRed: '#ef4444',    // doesn't fit
   cabinBlue: '#3b82f6',      // cabin suggestion
-  highlight: '#ffffff'
+  highlight: '#ffffff',
+  bootOpening: '#8b5cf6',    // boot opening constraint
+  openingBlocked: '#f59e0b'  // when opening is restrictive
 };
 
 function BootOutline({ vehicle }: { vehicle: Vehicle }) {
@@ -65,6 +67,94 @@ function BootOutline({ vehicle }: { vehicle: Vehicle }) {
         scaledWidth={scaledWidth}
         scaledHeight={scaledHeight}
       />
+    </group>
+  );
+}
+
+function BootOpening({ vehicle }: { vehicle: Vehicle }) {
+  const { bootMeasurements } = vehicle;
+  const { openingWidth, openingHeight, width, height } = bootMeasurements;
+  
+  // Always show opening visualization - use actual opening dimensions or fall back to boot dimensions
+  const effectiveOpeningWidth = openingWidth || width;
+  const effectiveOpeningHeight = openingHeight || height;
+  const hasSpecificOpeningData = !!(openingWidth || openingHeight);
+  
+  // Scale dimensions for display
+  const scaledOpeningWidth = effectiveOpeningWidth * SCALE_FACTOR;
+  const scaledOpeningHeight = effectiveOpeningHeight * SCALE_FACTOR;
+  const scaledBootWidth = width * SCALE_FACTOR;
+  
+  // Position the opening at the front of the boot (positive Z) where items are loaded from
+  const openingPosition = {
+    x: 0,
+    y: scaledOpeningHeight / 2,
+    z: scaledBootWidth / 2 + 0.01 // Slightly in front of the boot outline
+  };
+  
+  // Determine if opening is restrictive compared to boot space
+  // Only consider restrictive if we have specific opening data that's smaller than boot dimensions
+  const isRestrictive = hasSpecificOpeningData && (
+    (openingWidth && openingWidth < width * 0.8) || 
+    (openingHeight && openingHeight < height * 0.8)
+  );
+  
+  const openingColor = isRestrictive ? COLORS.openingBlocked : COLORS.bootOpening;
+  
+  return (
+    <group>
+      {/* Opening frame outline */}
+      <Box 
+        args={[scaledOpeningWidth, scaledOpeningHeight, 0.005]}
+        position={[openingPosition.x, openingPosition.y, openingPosition.z]}
+      >
+        <meshBasicMaterial 
+          color={openingColor} 
+          wireframe 
+          transparent 
+          opacity={0.8} 
+        />
+      </Box>
+      
+      {/* Semi-transparent opening plane */}
+      <Box 
+        args={[scaledOpeningWidth, scaledOpeningHeight, 0.001]}
+        position={[openingPosition.x, openingPosition.y, openingPosition.z - 0.002]}
+      >
+        <meshBasicMaterial 
+          color={openingColor} 
+          transparent 
+          opacity={0.15} 
+        />
+      </Box>
+      
+      {/* Opening dimension labels */}
+      <Text
+        position={[0, -0.15, openingPosition.z]}
+        fontSize={0.04}
+        color={openingColor}
+        anchorX="center"
+        anchorY="middle"
+        rotation={[0, 0, 0]}
+      >
+        {hasSpecificOpeningData 
+          ? `Opening: ${effectiveOpeningWidth}×${effectiveOpeningHeight}mm`
+          : `Opening: ${effectiveOpeningWidth}×${effectiveOpeningHeight}mm (assumed)`
+        }
+      </Text>
+      
+      {/* Warning indicator if restrictive */}
+      {isRestrictive && (
+        <Text
+          position={[0, scaledOpeningHeight + 0.08, openingPosition.z]}
+          fontSize={0.035}
+          color={COLORS.openingBlocked}
+          anchorX="center"
+          anchorY="middle"
+        >
+          ⚠️ Restrictive Opening
+        </Text>
+      )}
     </group>
   );
 }
@@ -280,6 +370,9 @@ export function BootVisualization({ vehicle, packingResult, highlightedItem }: B
         {/* Boot outline and grid */}
         <BootOutline vehicle={vehicle} />
         
+        {/* Boot opening visualization */}
+        <BootOpening vehicle={vehicle} />
+        
         {/* Packed items */}
         {packingResult?.packedItems.map((packedItem, index) => {
           const bootCenterOffset = {
@@ -335,6 +428,14 @@ export function BootVisualization({ vehicle, packingResult, highlightedItem }: B
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.packedOrange }}></div>
             <span>Compressed</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.bootOpening }}></div>
+            <span>Boot opening</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded" style={{ backgroundColor: COLORS.openingBlocked }}></div>
+            <span>Restrictive opening</span>
           </div>
         </div>
       </div>

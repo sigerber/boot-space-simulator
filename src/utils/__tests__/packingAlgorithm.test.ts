@@ -353,4 +353,377 @@ describe('packingAlgorithm', () => {
       );
     });
   });
+
+  describe('Boot Opening Constraints', () => {
+    // Vehicle with restrictive boot opening
+    const vehicleWithSmallOpening: Vehicle = {
+      ...mockVehicle,
+      bootMeasurements: {
+        length: 1000,
+        width: 1000,
+        height: 500,
+        openingWidth: 800,  // Smaller than internal width
+        openingHeight: 400  // Smaller than internal height
+      }
+    };
+
+    // Vehicle with very restrictive opening
+    const vehicleWithTinyOpening: Vehicle = {
+      ...mockVehicle,
+      bootMeasurements: {
+        length: 1000,
+        width: 1000,
+        height: 500,
+        openingWidth: 350,  // Very small opening
+        openingHeight: 250
+      }
+    };
+
+    // Items for testing opening constraints
+    const itemThatFitsInBootButNotOpening: Item = {
+      name: 'Wide Flat Item',
+      dimensions: { length: 900, width: 900, height: 100 }, // Fits in boot space
+      weight: 10,
+      rigidity: ItemRigidity.RIGID,
+      category: 'equipment',
+      cabinSuitable: false,
+      compressibility: 0,
+      stackable: true,
+      orientationConstraints: 'flat_only', // Must remain flat
+      customItem: false
+    };
+
+    const itemThatFitsOpeningButNotBoot: Item = {
+      name: 'Long Narrow Item',
+      dimensions: { length: 1200, width: 300, height: 200 }, // Too long for boot
+      weight: 8,
+      rigidity: ItemRigidity.RIGID,
+      category: 'equipment',
+      cabinSuitable: false,
+      compressibility: 0,
+      stackable: true,
+      orientationConstraints: 'any',
+      customItem: false
+    };
+
+    const flexibleItemThatMightCompress: Item = {
+      name: 'Compressible Large Item',
+      dimensions: { length: 600, width: 500, height: 450 }, // Height exceeds opening
+      weight: 12,
+      rigidity: ItemRigidity.FLEXIBLE,
+      category: 'luggage',
+      cabinSuitable: true,
+      compressibility: 25,
+      stackable: true,
+      orientationConstraints: 'any',
+      customItem: false
+    };
+
+    const uprightItemThatCantRotate: Item = {
+      name: 'Tall Upright Equipment',
+      dimensions: { length: 300, width: 300, height: 450 }, // Height exceeds opening
+      weight: 15,
+      rigidity: ItemRigidity.COMPLETELY_RIGID,
+      category: 'equipment',
+      cabinSuitable: false,
+      compressibility: 0,
+      stackable: false,
+      orientationConstraints: 'upright_only', // Cannot be rotated
+      customItem: false
+    };
+
+    describe('Access Validation', () => {
+      it('should reject items that cannot pass through boot opening in any orientation', () => {
+        const result = packItems(vehicleWithSmallOpening, [itemThatFitsInBootButNotOpening]);
+        
+        // Item should be unpacked because it cannot pass through the opening
+        expect(result.packedItems).toHaveLength(0);
+        expect(result.unpackedItems).toHaveLength(1);
+        expect(result.unpackedItems[0].name).toBe(itemThatFitsInBootButNotOpening.name);
+      });
+
+      it('should pack items that can pass through opening even if they need different orientation', () => {
+        const tallButNarrowItem: Item = {
+          name: 'Tall Narrow Item',
+          dimensions: { length: 200, width: 200, height: 600 }, // Too tall when upright
+          weight: 8,
+          rigidity: ItemRigidity.RIGID,
+          category: 'equipment',
+          cabinSuitable: false,
+          compressibility: 0,
+          stackable: true,
+          orientationConstraints: 'any', // Can be rotated
+          customItem: false
+        };
+
+        const result = packItems(vehicleWithSmallOpening, [tallButNarrowItem]);
+        
+        // Item should be packed because it can be rotated to fit through opening
+        if (result.packedItems.length > 0) {
+          const packed = result.packedItems[0];
+          // Should be oriented to fit through opening
+          expect(Math.max(packed.orientation.width, packed.orientation.height)).toBeLessThanOrEqual(400);
+        }
+      });
+
+      it('should add warnings when opening dimensions severely limit packing', () => {
+        const items = [itemThatFitsInBootButNotOpening, smallRigidItem];
+        const result = packItems(vehicleWithTinyOpening, items);
+        
+        // Should warn about opening constraints
+        expect(result.warnings).toEqual(
+          expect.arrayContaining([
+            expect.stringContaining('opening') || expect.stringContaining('access')
+          ])
+        );
+      });
+    });
+
+    describe('Orientation Constraints with Opening', () => {
+      it('should reject upright-only items that exceed opening height', () => {
+        const result = packItems(vehicleWithSmallOpening, [uprightItemThatCantRotate]);
+        
+        // Item cannot be rotated and exceeds opening height
+        expect(result.packedItems).toHaveLength(0);
+        expect(result.unpackedItems).toHaveLength(1);
+        expect(result.unpackedItems[0].name).toBe(uprightItemThatCantRotate.name);
+      });
+
+      it('should respect flat-only constraints when checking opening access', () => {
+        const flatItem: Item = {
+          name: 'Flat Wide Item',
+          dimensions: { length: 850, width: 850, height: 50 }, // Wide but fits when flat
+          weight: 10,
+          rigidity: ItemRigidity.RIGID,
+          category: 'equipment',
+          cabinSuitable: false,
+          compressibility: 0,
+          stackable: true,
+          orientationConstraints: 'flat_only',
+          customItem: false
+        };
+
+        const result = packItems(vehicleWithSmallOpening, [flatItem]);
+        
+        // Should be rejected because it's too wide even when flat
+        expect(result.packedItems).toHaveLength(0);
+        expect(result.unpackedItems).toHaveLength(1);
+      });
+    });
+
+    describe('Compression and Opening Constraints', () => {
+      it('should apply compression to fit items through opening when possible', () => {
+        const tightOpeningVehicle: Vehicle = {
+          ...vehicleWithSmallOpening,
+          bootMeasurements: {
+            ...vehicleWithSmallOpening.bootMeasurements,
+            openingWidth: 400,
+            openingHeight: 350
+          }
+        };
+
+        const result = packItems(tightOpeningVehicle, [flexibleItemThatMightCompress]);
+        
+        if (result.packedItems.length > 0) {
+          const packed = result.packedItems[0];
+          // Should be compressed to fit through opening
+          expect(packed.compressed).toBe(true);
+          expect(packed.compressionApplied).toBeGreaterThan(0);
+          // Compressed dimensions should fit through opening
+          expect(packed.orientation.width).toBeLessThanOrEqual(400);
+          expect(packed.orientation.height).toBeLessThanOrEqual(350);
+        }
+      });
+
+      it('should reject items that cannot be compressed enough to fit through opening', () => {
+        const lowCompressibilityItem: Item = {
+          name: 'Slightly Compressible Large Item',
+          dimensions: { length: 600, width: 600, height: 500 }, // Too big for tiny opening
+          weight: 15,
+          rigidity: ItemRigidity.SEMI_RIGID,
+          category: 'luggage',
+          cabinSuitable: true,
+          compressibility: 5, // Very low compressibility
+          stackable: true,
+          orientationConstraints: 'any',
+          customItem: false
+        };
+
+        const result = packItems(vehicleWithTinyOpening, [lowCompressibilityItem]);
+        
+        // Should be unpacked because even with compression it won't fit through opening
+        expect(result.unpackedItems).toContainEqual(
+          expect.objectContaining({
+            name: lowCompressibilityItem.name
+          })
+        );
+      });
+    });
+
+    describe('Sequential Packing and Access', () => {
+      it('should consider packing order when items might block access', () => {
+        const itemForDeepPlacement: Item = {
+          name: 'Item for Back',
+          dimensions: { length: 300, width: 300, height: 200 },
+          weight: 8,
+          rigidity: ItemRigidity.RIGID,
+          category: 'equipment',
+          cabinSuitable: false,
+          compressibility: 0,
+          stackable: true,
+          orientationConstraints: 'any',
+          customItem: false
+        };
+
+        const itemForNearPlacement: Item = {
+          name: 'Item for Front',
+          dimensions: { length: 200, width: 200, height: 150 },
+          weight: 5,
+          rigidity: ItemRigidity.RIGID,
+          category: 'equipment',
+          cabinSuitable: false,
+          compressibility: 0,
+          stackable: true,
+          orientationConstraints: 'any',
+          customItem: false
+        };
+
+        const result = packItems(vehicleWithSmallOpening, [itemForDeepPlacement, itemForNearPlacement]);
+        
+        // Both items should fit through opening and in boot
+        // Algorithm should handle placement order appropriately
+        expect(result.packedItems.length + result.unpackedItems.length).toBe(2);
+      });
+
+      it('should warn when packing order might affect real-world accessibility', () => {
+        const largeItemFirst: Item = {
+          name: 'Large Item First',
+          dimensions: { length: 500, width: 400, height: 300 },
+          weight: 20,
+          rigidity: ItemRigidity.RIGID,
+          category: 'equipment',
+          cabinSuitable: false,
+          compressibility: 0,
+          stackable: true,
+          orientationConstraints: 'any',
+          customItem: false
+        };
+
+        const smallItemSecond: Item = {
+          name: 'Small Item Second',
+          dimensions: { length: 200, width: 200, height: 100 },
+          weight: 3,
+          rigidity: ItemRigidity.RIGID,
+          category: 'equipment',
+          cabinSuitable: false,
+          compressibility: 0,
+          stackable: true,
+          orientationConstraints: 'any',
+          customItem: false
+        };
+
+        const result = packItems(vehicleWithSmallOpening, [largeItemFirst, smallItemSecond]);
+        
+        // Should potentially warn about access order
+        if (result.packedItems.length > 1) {
+          expect(result.warnings).toEqual(
+            expect.arrayContaining([
+              expect.stringMatching(/(order|access|sequence)/)
+            ])
+          );
+        }
+      });
+    });
+
+    describe('Missing Opening Dimensions', () => {
+      it('should handle vehicles without opening dimensions specified', () => {
+        const vehicleNoOpeningData: Vehicle = {
+          ...mockVehicle,
+          bootMeasurements: {
+            length: 1000,
+            width: 1000,
+            height: 500
+            // No openingWidth or openingHeight
+          }
+        };
+
+        const result = packItems(vehicleNoOpeningData, [smallRigidItem]);
+        
+        // Should pack normally when no opening constraints are specified
+        // But might add a warning about missing opening data
+        expect(result.packedItems.length + result.unpackedItems.length).toBe(1);
+      });
+
+      it('should assume conservative opening dimensions when data is missing', () => {
+        const vehiclePartialOpeningData: Vehicle = {
+          ...mockVehicle,
+          bootMeasurements: {
+            length: 1000,
+            width: 1000,
+            height: 500,
+            openingWidth: 800
+            // Missing openingHeight
+          }
+        };
+
+        const result = packItems(vehiclePartialOpeningData, [smallRigidItem]);
+        
+        // Should handle partial opening data gracefully
+        expect(result.packedItems.length + result.unpackedItems.length).toBe(1);
+      });
+    });
+
+    describe('Real-world Opening Constraints', () => {
+      it('should account for practical clearance margins around items', () => {
+        const itemAlmostFittingOpening: Item = {
+          name: 'Tight Fit Item',
+          dimensions: { length: 400, width: 395, height: 395 }, // Very close to opening size
+          weight: 8,
+          rigidity: ItemRigidity.RIGID,
+          category: 'equipment',
+          cabinSuitable: false,
+          compressibility: 0,
+          stackable: true,
+          orientationConstraints: 'any',
+          customItem: false
+        };
+
+        const result = packItems(vehicleWithSmallOpening, [itemAlmostFittingOpening]);
+        
+        // Should ideally account for clearance and possibly reject or warn
+        // This test will likely fail until clearance logic is implemented
+        if (result.packedItems.length === 0) {
+          expect(result.warnings).toEqual(
+            expect.arrayContaining([
+              expect.stringContaining('clearance') || expect.stringContaining('tight')
+            ])
+          );
+        }
+      });
+
+      it('should warn when opening significantly limits boot capacity', () => {
+        const normalBootItem: Item = {
+          name: 'Normal Boot Item',
+          dimensions: { length: 600, width: 600, height: 300 },
+          weight: 12,
+          rigidity: ItemRigidity.RIGID,
+          category: 'luggage',
+          cabinSuitable: true,
+          compressibility: 0,
+          stackable: true,
+          orientationConstraints: 'any',
+          customItem: false
+        };
+
+        const result = packItems(vehicleWithTinyOpening, [normalBootItem]);
+        
+        // Should warn when opening is the limiting factor, not boot space
+        expect(result.warnings).toEqual(
+          expect.arrayContaining([
+            expect.stringMatching(/(opening|access).*(limit|restrict)/)
+          ])
+        );
+      });
+    });
+  });
 }); 

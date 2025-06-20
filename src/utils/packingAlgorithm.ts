@@ -26,6 +26,10 @@ interface BootSpace {
   height: number;
   volume: number;
   efficiencyFactor: number;
+  // Opening constraints
+  openingWidth?: number;
+  openingHeight?: number;
+  hasOpeningConstraints: boolean;
 }
 
 interface ItemWithMetrics extends Item {
@@ -63,7 +67,10 @@ function calculateEffectiveBootSpace(vehicle: Vehicle): BootSpace {
     width: bootMeasurements.width,
     height: bootMeasurements.height,
     volume: baseVolume,
-    efficiencyFactor
+    efficiencyFactor,
+    openingWidth: bootMeasurements.openingWidth,
+    openingHeight: bootMeasurements.openingHeight,
+    hasOpeningConstraints: !!(bootMeasurements.openingWidth || bootMeasurements.openingHeight)
   };
 }
 
@@ -121,25 +128,90 @@ function generateOrientations(dimensions: ItemDimensions, constraints: string): 
 }
 
 /**
- * Apply compression to an item if needed and possible
+ * Check if an item orientation can pass through the boot opening
  */
-function applyCompression(item: Item, compressionNeeded: number): { dimensions: ItemDimensions; compressionApplied: number } {
-  const maxCompression = item.compressibility / 100;
-  const actualCompression = Math.min(compressionNeeded / 100, maxCompression);
-  
-  if (actualCompression <= 0) {
-    return { dimensions: item.dimensions, compressionApplied: 0 };
+function canPassThroughOpening(
+  orientation: ItemDimensions,
+  bootSpace: BootSpace,
+  clearanceMargin: number = 20 // mm of clearance needed around item
+): boolean {
+  if (!bootSpace.hasOpeningConstraints) {
+    return true; // No opening constraints to check
   }
+
+  const effectiveOpeningWidth = bootSpace.openingWidth 
+    ? bootSpace.openingWidth - clearanceMargin 
+    : bootSpace.width; // Fallback to boot width if not specified
+    
+  const effectiveOpeningHeight = bootSpace.openingHeight 
+    ? bootSpace.openingHeight - clearanceMargin 
+    : bootSpace.height; // Fallback to boot height if not specified
+
+  // Check if item can fit through opening in this orientation
+  // Item needs to fit through the opening cross-section (width x height)
+  return orientation.width <= effectiveOpeningWidth && 
+         orientation.height <= effectiveOpeningHeight;
+}
+
+/**
+ * Filter orientations that can pass through the boot opening
+ */
+function filterOrientationsForOpening(
+  orientations: ItemDimensions[],
+  bootSpace: BootSpace
+): ItemDimensions[] {
+  if (!bootSpace.hasOpeningConstraints) {
+    return orientations;
+  }
+
+  return orientations.filter(orientation => canPassThroughOpening(orientation, bootSpace));
+}
+
+/**
+ * Apply compression specifically to fit through boot opening
+ */
+function applyCompressionForOpening(
+  item: Item,
+  bootSpace: BootSpace
+): { dimensions: ItemDimensions; compressionApplied: number } | null {
+  if (!bootSpace.hasOpeningConstraints || item.compressibility <= 0) {
+    return null;
+  }
+
+  const maxCompression = item.compressibility / 100;
+  const clearanceMargin = 20; // mm
   
-  // Apply compression proportionally to all dimensions
-  const compressionFactor = 1 - actualCompression;
-  const compressedDimensions: ItemDimensions = {
-    length: Math.round(item.dimensions.length * compressionFactor),
-    width: Math.round(item.dimensions.width * compressionFactor),
-    height: Math.round(item.dimensions.height * compressionFactor)
-  };
-  
-  return { dimensions: compressedDimensions, compressionApplied: actualCompression * 100 };
+  const effectiveOpeningWidth = bootSpace.openingWidth 
+    ? bootSpace.openingWidth - clearanceMargin 
+    : bootSpace.width;
+    
+  const effectiveOpeningHeight = bootSpace.openingHeight 
+    ? bootSpace.openingHeight - clearanceMargin 
+    : bootSpace.height;
+
+  // Try different compression levels to fit through opening
+  for (let compression = 5; compression <= item.compressibility; compression += 5) {
+    const actualCompression = Math.min(compression / 100, maxCompression);
+    const compressionFactor = 1 - actualCompression;
+    
+    const compressedDimensions: ItemDimensions = {
+      length: Math.round(item.dimensions.length * compressionFactor),
+      width: Math.round(item.dimensions.width * compressionFactor),
+      height: Math.round(item.dimensions.height * compressionFactor)
+    };
+
+    // Generate orientations for compressed item
+    const compressedOrientations = generateOrientations(compressedDimensions, item.orientationConstraints);
+    
+    // Check if any orientation fits through opening
+    for (const orientation of compressedOrientations) {
+      if (orientation.width <= effectiveOpeningWidth && orientation.height <= effectiveOpeningHeight) {
+        return { dimensions: orientation, compressionApplied: actualCompression * 100 };
+      }
+    }
+  }
+
+  return null; // Cannot compress enough to fit through opening
 }
 
 /**
@@ -236,54 +308,91 @@ export function packItems(vehicle: Vehicle, items: Item[]): PackingResult {
   
   let totalVolumeUsed = 0;
   const effectiveBootVolume = bootSpace.volume * bootSpace.efficiencyFactor;
+  let itemsRejectedByOpening = 0;
+  let itemsRequiringCompression = 0;
   
   for (const itemWithMetrics of processedItems) {
     let packed = false;
     
-    // Try each orientation
-    for (const orientation of itemWithMetrics.orientations) {
-      const position = findBestPosition(orientation, bootSpace, packedItems);
-      
-      if (position) {
-        packedItems.push({
-          item: itemWithMetrics,
-          position,
-          orientation,
-          compressed: false,
-          compressionApplied: 0
-        });
-        
-        totalVolumeUsed += calculateItemVolume(orientation);
-        packed = true;
-        break;
-      }
-    }
+    // Filter orientations based on opening constraints
+    const validOrientations = filterOrientationsForOpening(itemWithMetrics.orientations, bootSpace);
     
-    // If not packed and item is compressible, try with compression
-    if (!packed && itemWithMetrics.compressibility > 0) {
-      for (let compression = 5; compression <= itemWithMetrics.compressibility; compression += 5) {
-        const { dimensions: compressedDims, compressionApplied } = applyCompression(itemWithMetrics, compression);
-        const compressedOrientations = generateOrientations(compressedDims, itemWithMetrics.orientationConstraints);
-        
-        for (const orientation of compressedOrientations) {
-          const position = findBestPosition(orientation, bootSpace, packedItems);
-          
+    // If no orientations can pass through opening, skip this item
+    if (validOrientations.length === 0 && bootSpace.hasOpeningConstraints) {
+      // Try compression for opening access if item is compressible
+      if (itemWithMetrics.compressibility > 0) {
+        const compressionResult = applyCompressionForOpening(itemWithMetrics, bootSpace);
+        if (compressionResult) {
+          const position = findBestPosition(compressionResult.dimensions, bootSpace, packedItems);
           if (position) {
             packedItems.push({
               item: itemWithMetrics,
               position,
-              orientation,
+              orientation: compressionResult.dimensions,
               compressed: true,
-              compressionApplied
+              compressionApplied: compressionResult.compressionApplied
             });
             
-            totalVolumeUsed += calculateItemVolume(orientation);
+            totalVolumeUsed += calculateItemVolume(compressionResult.dimensions);
+            itemsRequiringCompression++;
             packed = true;
-            break;
           }
         }
+      }
+      
+      if (!packed) {
+        unpackedItems.push(itemWithMetrics);
+        itemsRejectedByOpening++;
+        continue;
+      }
+    } else {
+      // Try each valid orientation
+      for (const orientation of validOrientations) {
+        const position = findBestPosition(orientation, bootSpace, packedItems);
         
-        if (packed) break;
+        if (position) {
+          packedItems.push({
+            item: itemWithMetrics,
+            position,
+            orientation,
+            compressed: false,
+            compressionApplied: 0
+          });
+          
+          totalVolumeUsed += calculateItemVolume(orientation);
+          packed = true;
+          break;
+        }
+      }
+      
+      // If not packed and item is compressible, try with compression for space constraints
+      if (!packed && itemWithMetrics.compressibility > 0) {
+        for (let compression = 5; compression <= itemWithMetrics.compressibility; compression += 5) {
+          const { dimensions: compressedDims, compressionApplied } = applyCompression(itemWithMetrics, compression);
+          const compressedOrientations = generateOrientations(compressedDims, itemWithMetrics.orientationConstraints);
+          const validCompressedOrientations = filterOrientationsForOpening(compressedOrientations, bootSpace);
+          
+          for (const orientation of validCompressedOrientations) {
+            const position = findBestPosition(orientation, bootSpace, packedItems);
+            
+            if (position) {
+              packedItems.push({
+                item: itemWithMetrics,
+                position,
+                orientation,
+                compressed: true,
+                compressionApplied
+              });
+              
+              totalVolumeUsed += calculateItemVolume(orientation);
+              itemsRequiringCompression++;
+              packed = true;
+              break;
+            }
+          }
+          
+          if (packed) break;
+        }
       }
     }
     
@@ -304,6 +413,72 @@ export function packItems(vehicle: Vehicle, items: Item[]): PackingResult {
       warnings.push('Boot has significant irregularities that may affect actual packing capacity');
     }
   }
+  
+  // Add warnings for opening constraints
+  if (bootSpace.hasOpeningConstraints) {
+    if (itemsRejectedByOpening > 0) {
+      warnings.push(`${itemsRejectedByOpening} item(s) could not fit through the boot opening despite fitting in the boot space`);
+    }
+    
+    if (itemsRequiringCompression > 0) {
+      warnings.push(`${itemsRequiringCompression} item(s) required compression to fit through the boot opening`);
+    }
+    
+    // Check if opening significantly limits capacity
+    const openingArea = (bootSpace.openingWidth || bootSpace.width) * (bootSpace.openingHeight || bootSpace.height);
+    const bootCrossSection = bootSpace.width * bootSpace.height;
+    if (openingArea < bootCrossSection * 0.6) {
+      warnings.push('Boot opening dimensions significantly limit packing capacity compared to internal space');
+    }
+    
+    // Warn about packing order if multiple items packed
+    if (packedItems.length > 1) {
+      warnings.push('Consider packing order - items placed deeper in the boot may be harder to access');
+    }
+    
+    // Check for items that were very close to fitting (clearance issues)
+    for (const unpackedItem of unpackedItems) {
+      if (bootSpace.openingWidth && bootSpace.openingHeight) {
+        const minDimension = Math.min(unpackedItem.dimensions.width, unpackedItem.dimensions.height);
+        const maxOpening = Math.max(bootSpace.openingWidth, bootSpace.openingHeight);
+        
+        // If item dimensions are very close to opening size (within 30mm), it's a clearance issue
+        if (minDimension <= maxOpening + 30 && minDimension > maxOpening) {
+          warnings.push('Some items require tight clearance margins that may be impractical in real-world use');
+          break;
+        }
+      }
+    }
+    
+    // Additional check: if items are rejected but would fit with less clearance
+    for (const unpackedItem of unpackedItems) {
+      if (bootSpace.openingWidth && bootSpace.openingHeight) {
+        // Check if item would fit through opening with minimal clearance (5mm instead of 20mm)
+        const minimalClearance = 5;
+        const effectiveOpeningWidthMinimal = bootSpace.openingWidth - minimalClearance;
+        const effectiveOpeningHeightMinimal = bootSpace.openingHeight - minimalClearance;
+        
+        // Try all orientations with minimal clearance
+        const orientations = generateOrientations(unpackedItem.dimensions, unpackedItem.orientationConstraints);
+        const wouldFitWithMinimalClearance = orientations.some(orientation => 
+          orientation.width <= effectiveOpeningWidthMinimal && 
+          orientation.height <= effectiveOpeningHeightMinimal
+        );
+        
+        if (wouldFitWithMinimalClearance) {
+          warnings.push('Some items require tight clearance margins that may be impractical in real-world use');
+          break;
+        }
+      }
+    }
+  }
+  
+  // Only warn about missing opening data if the vehicle data structure suggests it should have opening info
+  // (e.g., if bootMeasurements has other optional fields but not opening dimensions)
+  // For now, we'll skip this warning for cleaner behavior with legacy data
+  // if (!bootSpace.hasOpeningConstraints && (bootSpace.openingWidth === undefined && bootSpace.openingHeight === undefined)) {
+  //   warnings.push('Boot opening dimensions not available - actual packing may be more constrained');
+  // }
   
   const volumeUtilization = (totalVolumeUsed / effectiveBootVolume) * 100;
   
@@ -342,4 +517,26 @@ export function getPackingSummary(result: PackingResult): {
     cabinSuitableUnpacked: result.cabinOverflowSuggested.length,
     totalWeight: calculateTotalWeight(result.packedItems)
   };
+}
+
+/**
+ * Apply compression to an item if needed and possible (original function)
+ */
+function applyCompression(item: Item, compressionNeeded: number): { dimensions: ItemDimensions; compressionApplied: number } {
+  const maxCompression = item.compressibility / 100;
+  const actualCompression = Math.min(compressionNeeded / 100, maxCompression);
+  
+  if (actualCompression <= 0) {
+    return { dimensions: item.dimensions, compressionApplied: 0 };
+  }
+  
+  // Apply compression proportionally to all dimensions
+  const compressionFactor = 1 - actualCompression;
+  const compressedDimensions: ItemDimensions = {
+    length: Math.round(item.dimensions.length * compressionFactor),
+    width: Math.round(item.dimensions.width * compressionFactor),
+    height: Math.round(item.dimensions.height * compressionFactor)
+  };
+  
+  return { dimensions: compressedDimensions, compressionApplied: actualCompression * 100 };
 } 
